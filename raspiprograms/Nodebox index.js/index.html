@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>i2c-SHT30</title>
+    <script src="node_modules/@chirimen-raspi/polyfill/polyfill.js"></script>
+    <script src="node_modules/@chirimen/sht30/index.js"></script>
+    <script src="./main.js" defer></script>
+    <style>
+      h1,
+      p {
+        color: blue;
+        font-size: 24px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>SHT30</h1>
+    <img src="./schematic.png" width="400" />
+    <p>
+      <span>Temperature</span>
+      <span id="temperatureDisplay"></span>
+    </p>
+    <p>
+      <span>Humidity</span>
+      <span id="humidityDisplay"></span>
+    </p>
+  </body>
+</html>

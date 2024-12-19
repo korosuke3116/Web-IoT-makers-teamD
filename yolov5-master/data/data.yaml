@@ -1,8 +1,0 @@
-train: dataset/train/images
-val: dataset/val/images
-
-# クラス数とクラス名
-nc: 27  # クラス数 (例: 35クラスの場合)
-names: ["apple", "beetroot", "bell pepper", "cabbage","carrot", "cauliflower", "chilli pepper", "corn", "cucumber",
-        "eggplant", "fresh_banana", "grapes","kiwi", "lemon", "mango", "onion",
-        "orange", "pear", "peas", "pineapple","potato", "soy beans", "stale_banana", "sweetpotato", "tomato", "watermelon"]
