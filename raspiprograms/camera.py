@@ -18,6 +18,8 @@ output_dir = "processed_images"
 os.makedirs(output_dir, exist_ok=True)
 
 # Colab上のYOLOサーバーのURL
+# Colabで稼働しているYOLOサーバーのIPアドレスとポート番号に置き換えてください。
+# 例: "http://<COLAB_IP>:<COLAB_PORT>/upload"
 COLAB_SERVER_URL = "http://172.28.0.12:5000/upload"
 
 # YOLOで画像を処理する関数
@@ -36,7 +38,7 @@ def process_image_with_yolo(tag="manual"):
         # Colabサーバーに画像を送信
         with open(input_path, "rb") as image_file:
             files = {"file": image_file}
-            response = requests.post(COLAB_SERVER_URL, files=files)
+            response = requests.post(COLAB_SERVER_URL, files=files)  # Colab YOLOサーバーにPOSTリクエスト
 
         # Colabサーバーから加工済み画像とクラス名を取得
         if response.status_code == 200:
@@ -83,6 +85,7 @@ def process():
         output_path = result["output_path"]
         detected_classes = result["classes"]
 
+        # クライアント側に出力画像のURLと検出クラスを返す
         return jsonify({
             "image_url": f"/images/{os.path.basename(output_path)}",
             "classes": detected_classes,
@@ -103,4 +106,5 @@ if __name__ == "__main__":
     scheduler_thread.start()
 
     # Flaskサーバーを開始
+    # IPアドレス "0.0.0.0" は外部からの接続を許可します。
     app.run(host="0.0.0.0", port=5000)

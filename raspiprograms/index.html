@@ -130,14 +130,20 @@
 
         refreshButton.addEventListener('click', async () => {
             try {
-                const response = await fetch('/process', { method: 'POST' });
+                // Raspberry Pi FlaskサーバーのエンドポイントURL
+                // サーバーのIPアドレスまたはホスト名を適切に置き換えてください。
+                const SERVER_URL = "http://172.28.0.12:5000"; // 例: http://192.168.0.100:5000
+                const response = await fetch(`${SERVER_URL}/process`, { method: 'POST' }); // 画像処理エンドポイント
+
                 const data = await response.json();
 
                 if (data.image_url) {
+                    // 成功時: 画像を表示
                     cameraImage.style.display = 'block';
                     message.style.display = 'none';
-                    cameraImage.src = `/images/${data.image_url}?timestamp=${new Date().getTime()}`;
+                    cameraImage.src = `${SERVER_URL}${data.image_url}?timestamp=${new Date().getTime()}`;
                 } else {
+                    // エラー時: メッセージを表示
                     cameraImage.style.display = 'none';
                     message.style.display = 'block';
                 }
@@ -146,6 +152,7 @@
             }
         });
 
+        // ページロード時に最新画像を取得
         window.onload = () => {
             refreshButton.click();
         };
