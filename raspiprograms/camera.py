@@ -18,7 +18,7 @@ output_dir = "processed_images"
 os.makedirs(output_dir, exist_ok=True)
 
 # Colab上のYOLOサーバーのURL
-COLAB_SERVER_URL = "http://127.0.0.1:5000/upload"
+COLAB_SERVER_URL = "http://172.28.0.12:5000/upload"
 
 # YOLOで画像を処理する関数
 def process_image_with_yolo(tag="manual"):
