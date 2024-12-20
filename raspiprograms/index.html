@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Camera Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="node_modules/@chirimen-raspi/polyfill/polyfill.js"></script>
+    <script src="node_modules/@chirimen/sht30/index.js"></script>
+    <script src="./main.js" defer></script>
+
+    <style>
+        /* 全体のスタイル */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f3e6ff, #e9f7ff);
+        }
+
+        /* コンテナのスタイル */
+        .container {
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 400px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6c63ff, #4a47a3);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #4a47a3, #6c63ff);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #ripeness {
+            font-size: 18px;
+            color: #4a47a3;
+            margin-top: 10px;
+        }
+
+        #message {
+            font-size: 18px;
+            color: #ff4d4d;
+            margin-top: 10px;
+        }
+
+        /* 横方向の中央揃え */
+        .centered-text {
+            font-family: 'Roboto', sans-serif;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 400px;
+            white-space: nowrap;
+            justify-content: center;
+            align-items: flex-start;
+            position: absolute;
+        }
+
+        /* レイアウト調整 */
+        .row {
+            display: flex;
+            flex-direction: column; /* 縦方向に並べる */
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="row">
+        <div class="banana">
+            <div class="container">
+                <h1>Raspberry Pi カメラビューワー</h1>
+                <button id="refresh">最新画像を表示</button>
+                <div id="image-container">
+                    <img id="camera-image" src="" alt="Raspberry Pi カメラ画像" style="display: none;">
+                    <p id="ripeness" style="display: none;"></p>
+                    <p id="message" style="display: none;">画像が撮れていません</p>
+                </div>
+            </div>
+        </div>
+        <div class="hat">
+            <div class="container">
+                <p>
+                    <h1>温度</h1>
+                    <h1 id="temperatureDisplay"></h1>
+                </p>
+                <p>
+                    <h1>湿度</h1>
+                    <h1 id="humidityDisplay"></h1>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const refreshButton = document.getElementById('refresh');
+        const cameraImage = document.getElementById('camera-image');
+        const message = document.getElementById('message');
+
+        refreshButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/process', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.image_url) {
+                    cameraImage.style.display = 'block';
+                    message.style.display = 'none';
+                    cameraImage.src = `/images/${data.image_url}?timestamp=${new Date().getTime()}`;
+                } else {
+                    cameraImage.style.display = 'none';
+                    message.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('画像の取得エラー:', error);
+            }
+        });
+
+        window.onload = () => {
+            refreshButton.click();
+        };
+    </script>
+</body>
+</html>

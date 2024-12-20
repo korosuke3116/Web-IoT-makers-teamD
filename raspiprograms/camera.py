@@ -1,7 +1,6 @@
-from flask import Flask, request, redirect, send_file
-from picamera import PiCamera
+from flask import Flask, request, jsonify, send_file
+from picamera2 import Picamera2
 import schedule
-import cv2
 import os
 import threading
 import time
@@ -10,15 +9,16 @@ import requests
 
 app = Flask(__name__)
 
-# カメラ初期化
-camera = PiCamera()
+# Picamera2の初期化
+camera = Picamera2()
+camera.configure(camera.create_still_configuration())
 
 # 出力ディレクトリ
 output_dir = "processed_images"
 os.makedirs(output_dir, exist_ok=True)
 
-# Colab上のYOLOサーバーのURL（例として固定値を設定）
-COLAB_SERVER_URL = "http://<YOUR_COLAB_SERVER_URL>/upload"
+# Colab上のYOLOサーバーのURL
+COLAB_SERVER_URL = "http://127.0.0.1:5000/upload"
 
 # YOLOで画像を処理する関数
 def process_image_with_yolo(tag="manual"):
@@ -26,32 +26,39 @@ def process_image_with_yolo(tag="manual"):
     input_path = f"{output_dir}/input_{tag}_{timestamp}.jpg"
     output_path = f"{output_dir}/output_{tag}_{timestamp}.jpg"
 
-    # カメラで画像をキャプチャ
-    camera.capture(input_path)
-    print(f"Captured image: {input_path}")
+    try:
+        # カメラで画像をキャプチャ
+        camera.start()
+        camera.capture_file(input_path)
+        camera.stop()
+        print(f"Captured image: {input_path}")
 
-    # Colabサーバーに画像を送信
-    with open(input_path, "rb") as image_file:
-        files = {"file": image_file}
-        response = requests.post(COLAB_SERVER_URL, files=files)
+        # Colabサーバーに画像を送信
+        with open(input_path, "rb") as image_file:
+            files = {"file": image_file}
+            response = requests.post(COLAB_SERVER_URL, files=files)
 
-    # Colabサーバーから加工済み画像をダウンロード
-    if response.status_code == 200:
-        result = response.json()
-        yolo_output_url = result.get("output_url")
+        # Colabサーバーから加工済み画像とクラス名を取得
+        if response.status_code == 200:
+            result = response.json()
+            yolo_output_url = result.get("output_url")
+            detected_classes = result.get("classes", [])
 
-        # YOLOの出力画像をローカルに保存
-        if yolo_output_url:
-            yolo_image = requests.get(yolo_output_url)
-            with open(output_path, "wb") as f:
-                f.write(yolo_image.content)
-            print(f"Processed image saved: {output_path}")
-            return output_path
+            # YOLOの出力画像をローカルに保存
+            if yolo_output_url:
+                yolo_image = requests.get(yolo_output_url)
+                with open(output_path, "wb") as f:
+                    f.write(yolo_image.content)
+                print(f"Processed image saved: {output_path}")
+                return {"output_path": output_path, "classes": detected_classes}
+            else:
+                print("YOLO processing failed: No output URL")
         else:
-            print("YOLO processing failed: No output URL")
-    else:
-        print(f"Error from Colab server: {response.status_code}")
-        print(response.text)
+            print(f"Error from Colab server: {response.status_code}")
+            print(response.text)
+
+    except Exception as e:
+        print(f"Error processing image: {e}")
 
     return None
 
@@ -70,19 +77,18 @@ def run_scheduler():
 # ボタン押下時の画像処理
 @app.route("/process", methods=["POST"])
 def process():
-    output_path = process_image_with_yolo(tag="manual")  # 画像取得と加工
+    result = process_image_with_yolo(tag="manual")  # 画像取得と加工
 
-    if output_path:
-        # 送り先HTMLのURL（例として固定値にしています。必要に応じて変更してください。）
-        target_url = "http://example.com/update_image"
+    if result:
+        output_path = result["output_path"]
+        detected_classes = result["classes"]
 
-        # 画像URLを送信
-        return {
+        return jsonify({
             "image_url": f"/images/{os.path.basename(output_path)}",
-            "redirect_url": target_url,
-        }
+            "classes": detected_classes,
+        })
     else:
-        return {"error": "Image processing failed"}, 500
+        return jsonify({"error": "Image processing failed"}), 500
 
 # 加工画像を提供
 @app.route("/images/<filename>")
